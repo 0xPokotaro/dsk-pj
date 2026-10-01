@@ -1,0 +1,124 @@
+.card {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: #ffffff;
+}
+
+.wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 950 / 300;
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.edge {
+  fill: none;
+  stroke: #94a3b8;
+  stroke-width: 1.75;
+}
+
+.arrowhead {
+  fill: #94a3b8;
+}
+
+.edgeLabelBg {
+  fill: #ffffff;
+}
+
+.edgeLabel {
+  font-size: 12px;
+  fill: #475569;
+  font-weight: 500;
+}
+
+.node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 190px;
+  min-height: 58px;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.nodeLabel {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1f2937;
+  line-height: 1.25;
+}
+
+.nodeSublabel {
+  font-size: 0.72rem;
+  color: #475569;
+  line-height: 1.3;
+}
+
+.category-government {
+  background: #e8f0ff;
+  border-color: #4c8dff;
+}
+
+.category-citizen {
+  background: #e8f7ee;
+  border-color: #16a34a;
+}
+
+.category-platform {
+  background: #e0f7fa;
+  border-color: #06b6d4;
+}
+
+.category-owner {
+  background: #f2e8ff;
+  border-color: #a855f7;
+}
+
+.category-finance {
+  background: #fff3e0;
+  border-color: #f59e0b;
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 1rem;
+  }
+
+  .wrapper {
+    aspect-ratio: 900 / 560;
+  }
+
+  .node {
+    width: 130px;
+    min-height: 48px;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .nodeLabel {
+    font-size: 0.78rem;
+  }
+
+  .nodeSublabel {
+    font-size: 0.6rem;
+  }
+
+  .edgeLabel {
+    font-size: 9px;
+  }
+}

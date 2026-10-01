@@ -1,0 +1,12 @@
+{
+  "name": "dsk-pj",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter docs start",
+    "build": "pnpm --filter docs build"
+  },
+  "engines": {
+    "node": ">=20.0"
+  }
+}
