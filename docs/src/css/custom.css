@@ -23,6 +23,10 @@
   table-layout: fixed;
 }
 
+.table-small table {
+  font-size: 12px;
+}
+
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
   --ifm-color-primary: #25c2a0;
@@ -33,4 +37,41 @@
   --ifm-color-primary-lighter: #32d8b4;
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* 関係者と役割の表：2つの表で列幅をそろえ、関係者名・位置づけを折り返さない */
+.roles-table table {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+}
+.roles-table th:nth-child(1) {
+  width: 14em;
+}
+.roles-table th:nth-child(2) {
+  width: 11.5em;
+}
+.roles-table th:nth-child(3) {
+  width: 10.5em;
+}
+.roles-table td:nth-child(1),
+.roles-table td:nth-child(2),
+.roles-table td:nth-child(3) {
+  white-space: nowrap;
+}
+
+/* 丸数字（①②）。フォントの丸数字は小さく表示されるため、CSSで描く */
+.circled-no {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3em;
+  height: 1.3em;
+  margin-left: 0.2em;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.8em;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: 0.1em;
 }
