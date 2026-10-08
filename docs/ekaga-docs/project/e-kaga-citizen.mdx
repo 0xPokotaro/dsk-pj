@@ -4,6 +4,7 @@ sidebar_label: e-加賀市民
 ---
 
 import EKagaWalletDiagram from '@site/src/components/EKagaWalletDiagram';
+import EKagaSignInDiagram from '@site/src/components/EKagaSignInDiagram';
 
 # e-加賀市民
 
@@ -53,6 +54,17 @@ ipfs://bafkreihnjp4bnwxtmrjoviyq5dqmgohwlyphxwmrgozw47cyb4rvhmhv3i
 
 - Googleアカウントまたはメールアドレスで作成できる
 - ウォレットには Torus Wallet が利用されている
+- 既存の MetaMask でログインすることもできる
+
+### 新規作成とログイン
+
+<EKagaSignInDiagram />
+
+| 区分 | 条件 | 方法 | 使われるウォレット |
+| --- | --- | --- | --- |
+| 新規作成 | アカウントも MetaMask も持っていない | Google アカウント、メールアドレス | Torus Wallet（新しく作成される） |
+| ログイン | アカウントを持っている | Google アカウント、メールアドレス | Torus Wallet（作成済みのもの） |
+| ログイン | MetaMask を持っている | MetaMask | MetaMask（既存のウォレット） |
 
 ## 関連リンク
 

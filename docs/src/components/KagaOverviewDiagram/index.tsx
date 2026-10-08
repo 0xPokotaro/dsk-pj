@@ -5,6 +5,7 @@ import {
   IconTile,
   LANE,
   OPS,
+  StepNo,
   SUBTEXT,
   SURFACE,
   TEXT,
@@ -14,49 +15,54 @@ import {
 } from '@site/src/components/KagaDiagramParts';
 
 /*
- * 第一弾の全体像（円 → JPYC → 配布 → 支払い → 円転 の最小ループと、それを支える体制）
- * - 凡例
- * - 中央の列：ユーザー → e-加賀市民でウォレット連携 → 市民証かつJPKI → JPYC配布対象者
- * - 列の左右：株式会社JPYC（発行・償還）。列を横切らない
- * - 下：運営体制（詳細は体制図 KagaRolesDiagram）
- * 手順の詳細は業務フロー図（KagaFlowDiagram）で示す
+ * 第一弾の全体像。3つの帯を上から順に読む
+ * - 配布対象者になるまで：ユーザー → ウォレット登録 → 市民証かつ公的個人認証 → e-加賀市民
+ * - JPYCの流れ：JPYC株式会社 → 推進機構 → e-加賀市民 → 地域事業者 → JPYC株式会社
+ *   手順番号 1〜4 は業務フロー図（KagaFlowDiagram）と本文の番号に対応する
+ * - 運営体制：加賀市・CORGEAR・DSK（詳細は体制図 KagaRolesDiagram）
+ * 部品の約束
+ * - 関係者は角丸12・FLOW枠、条件（関係者でないもの）は角丸12・OPS枠
+ * - お金の矢印は太さ2（JPYCはFLOW、円は黄）、運営の矢印は太さ1.6のOPS。検討中は破線
+ * - すべての要素を5本の列（COL）にそろえる
  */
 
-const WIDTH = 900;
+const WIDTH = 960;
+const BAND_X = 12;
+const CARD_W = 136;
+const STEP = (WIDTH - 2 * (BAND_X + 12) - CARD_W) / 4;
+const COL = [0, 1, 2, 3, 4].map((i) => BAND_X + 12 + CARD_W / 2 + STEP * i);
+const R = 12;
 
-const COL = [172, 450, 728];
-const CARD_W = 180;
-const CARD_H = 142;
-const CARD_TOP = 362;
-const CARD_BOTTOM = CARD_TOP + CARD_H;
-const FOOTER_H = 32;
-const CARD_R = 12;
-
-/** ユーザーから配布対象者まで。JPYCの帯はこの列の外に置く。 */
-const PATH_X = 280;
-const PATH_W = 360;
-const PATH_TOP = 38;
-const PATH_CX = 450;
-
-const USER_TOP = 48;
-const USER_H = 38;
-const COND_TOP = 204;
-const COND_H = 48;
-
-const JPYC_TOP = 264;
-const JPYC_H = 50;
-const JPYC_BOTTOM = JPYC_TOP + JPYC_H;
-const JPYC_LEFT_W = PATH_X - 24;
-const JPYC_RIGHT_X = PATH_X + PATH_W + 8;
-
-const CHIP_W = 176;
+// 横長の箱（ユーザー・条件・運営体制）
 const CHIP_H = 60;
-const BAND_TOP = 558;
-const CHIP_TOP = 590;
-const BAND_H = CHIP_TOP + CHIP_H + 14 - BAND_TOP;
-const HEIGHT = BAND_TOP + BAND_H + 10;
 
-const RAIL_Y = CARD_BOTTOM + 28;
+// 帯1：配布対象者になるまで
+const B1_TOP = 34;
+const B1_CHIP_TOP = B1_TOP + 36;
+const B1_CY = B1_CHIP_TOP + CHIP_H / 2;
+const JOIN_Y = B1_CHIP_TOP + CHIP_H + 14;
+const B1_H = JOIN_Y + 10 - B1_TOP;
+// 条件の箱は名前が長いので、関係者のカードより広くする。「かつ」の両側に置く
+const COND_W = 190;
+const COND_DX = COND_W / 2 + 26;
+
+// 帯2：JPYCの流れ
+const B2_TOP = B1_TOP + B1_H + 12;
+const CARD_TOP = B2_TOP + 40;
+const CARD_H = 128;
+const FOOTER_H = 30;
+const CARD_BOTTOM = CARD_TOP + CARD_H;
+const FLOW_Y = CARD_TOP + (CARD_H - FOOTER_H) / 2;
+const B2_H = CARD_BOTTOM + 48 - B2_TOP;
+
+// 帯3：運営体制
+const B3_TOP = B2_TOP + B2_H + 12;
+const RAIL_Y = B3_TOP + 24;
+const B3_CHIP_TOP = B3_TOP + 40;
+const B3_CY = B3_CHIP_TOP + CHIP_H / 2;
+const B3_H = B3_CHIP_TOP + CHIP_H + 14 - B3_TOP;
+
+const HEIGHT = B3_TOP + B3_H + 8;
 
 const STYLE = `
 ${YEN_STYLE}
@@ -66,96 +72,80 @@ ${YEN_STYLE}
 .kaga-ov-link:focus-visible rect { stroke-width: 2.4; }
 `;
 
-type MoneyActor = {
-  x: number;
-  icon: IconKind;
-  name: string[];
-  role: string;
-  wallet: string;
-  walletNote?: string;
-  no?: number;
-};
+// カードの記載は本文の「関係者と役割」テーブルにそろえる
+// - name：関係者、role：位置づけ（案）、wallet：ウォレット（「―」の関係者は欄なし）
+// - 動作（発行・配布・支払い・償還）はカードに書かず、矢印のラベルで示す
+type Wallet = {label: string; no?: number};
+type MoneyActor = {x: number; icon: IconKind; name: string[]; role: string; wallet?: Wallet};
 
 const actors: MoneyActor[] = [
-  {
-    x: COL[0],
-    icon: 'org',
-    name: ['一般社団法人', '加賀国家戦略特区推進機構'],
-    role: '実施主体',
-    wallet: '法人ウォレット',
-    no: 1,
-  },
-  {
-    x: COL[1],
-    icon: 'person',
-    name: ['e-加賀市民'],
-    role: 'JPYC配布対象者',
-    wallet: '連携したウォレット',
-    walletNote: 'e-加賀市民で連携',
-  },
-  {
-    x: COL[2],
-    icon: 'shop',
-    name: ['地域事業者'],
-    role: '受取側',
-    wallet: '法人ウォレット',
-    no: 2,
-  },
+  {x: COL[0], icon: 'coin', name: ['JPYC株式会社'], role: '発行体'},
+  {x: COL[1], icon: 'org', name: ['加賀国家戦略特区', '推進機構'], role: '実施主体', wallet: {label: '法人ウォレット', no: 1}},
+  {x: COL[2], icon: 'person', name: ['e-加賀市民'], role: '配布先', wallet: {label: 'Torus Wallet'}},
+  {x: COL[3], icon: 'shop', name: ['地域事業者'], role: '受取側', wallet: {label: '法人ウォレット', no: 2}},
+  {x: COL[4], icon: 'coin', name: ['JPYC株式会社'], role: '発行体'},
 ];
 
-type OpsChip = {x: number; icon: IconKind; name: string; role: string; note?: string};
-
-const chips: OpsChip[] = [
-  {x: COL[0], icon: 'cityhall', name: '加賀市', role: '委託元'},
-  {x: COL[1], icon: 'org', name: 'CORGEAR', role: '運営実務', note: 'ウォレット未定'},
-  {x: COL[2], icon: 'org', name: 'DSK', role: '依頼元'},
-];
-
-function LegendItem({x, y, color, className, dashed, label}: {x: number; y: number; color?: string; className?: string; dashed?: boolean; label: string}): ReactNode {
+function Band({top, h, title}: {top: number; h: number; title: string}): ReactNode {
   return (
     <g>
-      <line
-        x1={x}
-        y1={y}
-        x2={x + 22}
-        y2={y}
-        stroke={className ? undefined : color}
-        className={className}
-        strokeWidth={2.4}
-        strokeDasharray={dashed ? '5 3.5' : undefined}
-        strokeLinecap="butt"
-      />
-      <text x={x + 28} y={y + 4} fontSize={12} fill={SUBTEXT}>
-        {label}
+      <rect x={BAND_X} y={top} width={WIDTH - BAND_X * 2} height={h} rx={R} fill={LANE} />
+      <text x={BAND_X + 14} y={top + 22} fontSize={13} fontWeight={700} fill={TEXT}>
+        {title}
       </text>
     </g>
   );
 }
 
-function WalletFooter({x, label, no}: {x: number; label: string; no?: number}): ReactNode {
+// 横長の箱（アイコン・名前・補足を横並び）。関係者は FLOW枠（sub＝位置づけ）、条件は OPS枠（sub＝何で満たすか）
+function Chip({x, top, w = CARD_W, icon, name, sub = [], condition = false}: {x: number; top: number; w?: number; icon: IconKind; name: string; sub?: string[]; condition?: boolean}): ReactNode {
+  const x0 = x - w / 2;
+  const cy = top + CHIP_H / 2;
+  const lineH = 15;
+  const y0 = cy - (sub.length * lineH) / 2 + 4;
+  const tx = x0 + 46;
+  return (
+    <g>
+      <rect x={x0} y={top} width={w} height={CHIP_H} rx={R} fill={SURFACE} stroke={condition ? OPS : FLOW} strokeWidth={1.6} />
+      <IconTile x={x0 + 24} cy={cy} size={28} kind={icon} />
+      <text x={tx} y={y0} fontSize={13} fontWeight={700} fill={TEXT}>
+        {name}
+      </text>
+      {sub.map((l, i) => (
+        <text key={l} x={tx} y={y0 + lineH * (i + 1)} fontSize={11.5} fill={SUBTEXT}>
+          {l}
+        </text>
+      ))}
+    </g>
+  );
+}
+
+// 半角は全角の半分の幅として見積もる
+const textWidth = (s: string, size: number) => [...s].reduce((w, c) => w + (c.charCodeAt(0) < 0x100 ? size * 0.55 : size), 0);
+
+function WalletFooter({x, wallet}: {x: number; wallet: Wallet}): ReactNode {
   const x0 = x - CARD_W / 2;
   const y = CARD_BOTTOM - FOOTER_H;
-  const r = CARD_R;
-  const d = `M${x0},${y} H${x0 + CARD_W} V${y + FOOTER_H - r} Q${x0 + CARD_W},${y + FOOTER_H} ${x0 + CARD_W - r},${y + FOOTER_H} H${x0 + r} Q${x0},${y + FOOTER_H} ${x0},${y + FOOTER_H - r} Z`;
-  const textW = 12 * label.length;
-  const noR = 8;
-  const contentW = 22 + 8 + textW + (no ? noR * 2 + 6 : 0);
+  const d = `M${x0},${y} H${x0 + CARD_W} V${CARD_BOTTOM - R} Q${x0 + CARD_W},${CARD_BOTTOM} ${x0 + CARD_W - R},${CARD_BOTTOM} H${x0 + R} Q${x0},${CARD_BOTTOM} ${x0},${CARD_BOTTOM - R} Z`;
+  const cy = y + FOOTER_H / 2;
+  const textW = textWidth(wallet.label, 11);
+  const noR = 7.5;
+  const contentW = 22 + 7 + textW + (wallet.no ? noR * 2 + 4 : 0);
   const start = x - contentW / 2;
-  const cy = y + FOOTER_H / 2 + 1;
-  const noCx = start + 30 + textW + 6 + noR;
+  const noCx = start + 29 + textW + 4 + noR;
   return (
     <g>
       <path d={d} fill={LANE} />
       <line x1={x0} y1={y} x2={x0 + CARD_W} y2={y} stroke={FLOW} strokeWidth={1} strokeOpacity={0.35} />
       <WalletGlyph x={start} y={cy - 8} />
-      <text x={start + 30} y={cy + 4} fontSize={12} fontWeight={700} fill={TEXT}>
-        {label}
+      <text x={start + 29} y={cy + 4} fontSize={11} fontWeight={700} fill={TEXT}>
+        {wallet.label}
       </text>
-      {no && (
+      {wallet.no && (
         <g>
           <circle cx={noCx} cy={cy} r={noR} fill="none" stroke={TEXT} strokeWidth={1.3} />
-          <text x={noCx} y={cy + 3.5} textAnchor="middle" fontSize={10.5} fontWeight={700} fill={TEXT}>
-            {no}
+          <text x={noCx} y={cy + 3.5} textAnchor="middle" fontSize={10} fontWeight={700} fill={TEXT}>
+            {wallet.no}
           </text>
         </g>
       )}
@@ -165,220 +155,200 @@ function WalletFooter({x, label, no}: {x: number; label: string; no?: number}): 
 
 function MoneyCard({a}: {a: MoneyActor}): ReactNode {
   const x0 = a.x - CARD_W / 2;
-  const nameY = CARD_TOP + 56;
-  const roleY = nameY + (a.name.length - 1) * 16 + 18;
+  // ウォレット欄がないカードは、中身を残りの高さの中央に寄せる
+  const dy = a.wallet ? 0 : FOOTER_H / 2;
+  const nameY = CARD_TOP + 58 + dy;
   return (
     <g>
-      <rect x={x0} y={CARD_TOP} width={CARD_W} height={CARD_H} rx={CARD_R} fill={SURFACE} />
-      <IconTile x={a.x} cy={CARD_TOP + 22} size={30} kind={a.icon} />
-      <text x={a.x} y={nameY} textAnchor="middle" fontSize={a.name.some((l) => l.length > 8) ? 12 : 14} fontWeight={700} fill={TEXT}>
+      <rect x={x0} y={CARD_TOP} width={CARD_W} height={CARD_H} rx={R} fill={SURFACE} />
+      <IconTile x={a.x} cy={CARD_TOP + 24 + dy} size={28} kind={a.icon} />
+      <text x={a.x} y={nameY} textAnchor="middle" fontSize={13} fontWeight={700} fill={TEXT}>
         {a.name.map((l, i) => (
           <tspan key={l} x={a.x} dy={i === 0 ? 0 : 15}>
             {l}
           </tspan>
         ))}
       </text>
-      <text x={a.x} y={roleY} textAnchor="middle" fontSize={11.5} fill={SUBTEXT}>
+      <text x={a.x} y={nameY + (a.name.length - 1) * 15 + 17} textAnchor="middle" fontSize={11.5} fill={SUBTEXT}>
         {a.role}
       </text>
-      {a.walletNote && (
-        <text x={a.x} y={roleY + 20} textAnchor="middle" fontSize={10} fill={SUBTEXT}>
-          （{a.walletNote}）
-        </text>
-      )}
-      <WalletFooter x={a.x} label={a.wallet} no={a.no} />
-      <rect x={x0} y={CARD_TOP} width={CARD_W} height={CARD_H} rx={CARD_R} fill="none" stroke={FLOW} strokeWidth={1.6} />
+      {a.wallet && <WalletFooter x={a.x} wallet={a.wallet} />}
+      <rect x={x0} y={CARD_TOP} width={CARD_W} height={CARD_H} rx={R} fill="none" stroke={FLOW} strokeWidth={1.6} />
     </g>
   );
 }
 
-function OpsChipBox({c}: {c: OpsChip}): ReactNode {
-  const x0 = c.x - CHIP_W / 2;
-  const cy = CHIP_TOP + CHIP_H / 2 + (c.note ? 1 : 0);
+// カード間の矢印（横）。from → to の向きに引く
+function HArrow({from, to, y, kind, dashed}: {from: number; to: number; y: number; kind: 'jpyc' | 'yen' | 'ops'; dashed?: boolean}): ReactNode {
+  const dir = Math.sign(to - from);
+  const props =
+    kind === 'yen'
+      ? {className: 'kaga-yen-stroke', strokeWidth: 2}
+      : {stroke: kind === 'jpyc' ? FLOW : OPS, strokeWidth: kind === 'jpyc' ? 2 : 1.6};
   return (
-    <g>
-      <rect x={x0} y={CHIP_TOP} width={CHIP_W} height={CHIP_H} rx={10} fill={SURFACE} stroke={OPS} strokeWidth={1.4} />
-      <IconTile x={x0 + 26} cy={CHIP_TOP + CHIP_H / 2} size={30} kind={c.icon} />
-      <text x={x0 + 48} y={c.note ? cy - 14 : cy - 6} fontSize={13} fontWeight={700} fill={TEXT}>
-        {c.name}
-      </text>
-      <text x={x0 + 48} y={c.note ? cy + 2 : cy + 12} fontSize={11.5} fill={SUBTEXT}>
-        {c.role}
-      </text>
-      {c.note && (
-        <text x={x0 + 48} y={cy + 18} fontSize={11} fontWeight={700} fill={FLOW}>
-          {c.note}
-        </text>
-      )}
-    </g>
+    <line
+      x1={from + dir * (CARD_W / 2 + 3)}
+      y1={y}
+      x2={to - dir * (CARD_W / 2 + 4)}
+      y2={y}
+      {...props}
+      strokeDasharray={dashed ? '5 3.5' : undefined}
+      markerEnd={`url(#kaga-ov-${kind})`}
+    />
   );
 }
 
-function FlowLabel({x, y, lines, color, className, anchor = 'middle'}: {x: number; y: number; lines: string[]; color?: string; className?: string; anchor?: 'start' | 'middle' | 'end'}): ReactNode {
+function Label({x, y, text, kind, anchor = 'middle'}: {x: number; y: number; text: string; kind: 'jpyc' | 'yen' | 'ops' | 'plain'; anchor?: 'start' | 'middle' | 'end'}): ReactNode {
+  const money = kind === 'jpyc' || kind === 'yen';
   return (
-    <text x={x} y={y} textAnchor={anchor} fontSize={12} fontWeight={700} fill={className ? undefined : color} className={className}>
-      {lines.map((l, i) => (
-        <tspan key={l} x={x} dy={i === 0 ? 0 : 15}>
-          {l}
-        </tspan>
-      ))}
+    <text
+      x={x}
+      y={y}
+      textAnchor={anchor}
+      fontSize={12}
+      fontWeight={money || kind === 'plain' ? 700 : 400}
+      fill={kind === 'jpyc' ? FLOW : kind === 'ops' ? SUBTEXT : kind === 'plain' ? TEXT : undefined}
+      className={kind === 'yen' ? 'kaga-yen-fill' : undefined}>
+      {text}
     </text>
   );
 }
 
+function LegendLine({x, y, kind, dashed, label}: {x: number; y: number; kind: 'jpyc' | 'yen' | 'ops'; dashed?: boolean; label: string}): ReactNode {
+  return (
+    <g>
+      <line
+        x1={x}
+        y1={y}
+        x2={x + 22}
+        y2={y}
+        stroke={kind === 'yen' ? undefined : kind === 'jpyc' ? FLOW : OPS}
+        className={kind === 'yen' ? 'kaga-yen-stroke' : undefined}
+        strokeWidth={kind === 'ops' ? 1.6 : 2.2}
+        strokeDasharray={dashed ? '5 3.5' : undefined}
+      />
+      <text x={x + 28} y={y + 4} fontSize={12} fill={SUBTEXT}>
+        {label}
+      </text>
+    </g>
+  );
+}
+
+const gap = (i: number) => (COL[i] + COL[i + 1]) / 2;
+
 export default function KagaOverviewDiagram(): ReactNode {
-  const exchangeMid = (JPYC_BOTTOM + CARD_TOP) / 2 + 4;
-  const chipCy = CHIP_TOP + CHIP_H / 2;
-  const gapMid = CARD_BOTTOM + 16;
+  const condL = COL[2] - COND_DX;
+  const condR = COL[2] + COND_DX;
   return (
     <div style={{overflowX: 'auto', maxWidth: '100%'}}>
-    <svg
-      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      role="img"
-      aria-label="第一弾の全体像：ユーザーがe-加賀市民でウォレットを連携する。そのウォレットでe-加賀市民証を保有し、かつJPKI確認をした人がe-加賀市民（JPYC配布対象者）になる。推進機構が株式会社JPYCで円をJPYCに換え、e-加賀市民へ配布する。e-加賀市民は連携したウォレットで地域事業者へ支払い、地域事業者は受け取ったJPYCを償還して円に換える。受取後の扱いは検討中。加賀市が推進機構へ運営を委託し、推進機構がCORGEARへ再委託、DSKがCORGEARへ依頼する。CORGEARは市民アプリを改修する"
-      style={{width: '100%', minWidth: 720, maxWidth: WIDTH, height: 'auto', display: 'block'}}>
-      <style>{STYLE}</style>
-      <defs>
-        <ArrowMarker id="kaga-ov-jpyc" color={FLOW} />
-        <ArrowMarker id="kaga-ov-yen" className="kaga-yen-fill" />
-        <ArrowMarker id="kaga-ov-ops" color={OPS} />
-      </defs>
+      <svg
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        role="img"
+        aria-label="第一弾の全体像。JPYC配布対象者になるまで：ユーザーがe-加賀市民にウォレットを登録し、登録したウォレットでのe-加賀市民証の保有、かつマイナンバーカードでの公的個人認証（JPKI）でe-加賀市民（JPYC配布対象者）になる。円とJPYCの流れ：1 推進機構（実施主体・法人ウォレット①）がJPYC株式会社（発行体）へ円を払いJPYCを受け取る、2 e-加賀市民（配布先・Torus Wallet）へ配布、3 e-加賀市民が店頭QRで地域事業者（受取側・法人ウォレット②）へ支払い、地域事業者がe-加賀市民へ役務を提供、4 地域事業者がJPYCを償還して円を受け取る（受取後の対応は検討中）。運営体制：加賀市（委託元）が推進機構へ運営を委託し、推進機構がCORGEAR（再委託先・運営実務）へ再委託、DSK（依頼元）がCORGEARへ実証を依頼する。CORGEARは市民アプリを改修する"
+        style={{width: '100%', minWidth: 720, maxWidth: WIDTH, height: 'auto', display: 'block'}}>
+        <style>{STYLE}</style>
+        <defs>
+          <ArrowMarker id="kaga-ov-jpyc" color={FLOW} />
+          <ArrowMarker id="kaga-ov-yen" className="kaga-yen-fill" />
+          <ArrowMarker id="kaga-ov-ops" color={OPS} />
+        </defs>
 
-      <LegendItem x={16} y={16} color={FLOW} label="JPYCの流れ" />
-      <LegendItem x={148} y={16} className="kaga-yen-stroke" label="円の流れ" />
-      <LegendItem x={268} y={16} color={OPS} label="運営・委託" />
-      <LegendItem x={396} y={16} color={FLOW} dashed label="検討中" />
+        {/* 凡例 */}
+        <LegendLine x={16} y={16} kind="jpyc" label="JPYCの流れ" />
+        <LegendLine x={140} y={16} kind="yen" label="円の流れ" />
+        <LegendLine x={252} y={16} kind="ops" label="運営・手続き・役務" />
+        <LegendLine x={410} y={16} kind="jpyc" dashed label="検討中" />
+        <g transform="translate(506, 0)">
+          <StepNo x={10} y={16} n={1} />
+          <text x={30} y={20} textAnchor="middle" fontSize={12} fill={SUBTEXT}>
+            〜
+          </text>
+          <StepNo x={50} y={16} n={4} />
+          <text x={66} y={20} fontSize={12} fill={SUBTEXT}>
+            業務フローの手順番号
+          </text>
+        </g>
 
-      {/* 発行・償還は中央の列の左右。列を横切らない */}
-      <rect x={16} y={JPYC_TOP} width={JPYC_LEFT_W} height={JPYC_H} rx={12} fill={SURFACE} stroke={FLOW} strokeWidth={1.8} />
-      <IconTile x={42} cy={JPYC_TOP + JPYC_H / 2} size={28} kind="coin" />
-      <text x={62} y={JPYC_TOP + 21} fontSize={14} fontWeight={700} fill={TEXT}>
-        株式会社JPYC
-      </text>
-      <text x={62} y={JPYC_TOP + 38} fontSize={12} fill={SUBTEXT}>
-        発行（円 → JPYC）
-      </text>
-      <rect x={JPYC_RIGHT_X} y={JPYC_TOP} width={WIDTH - 16 - JPYC_RIGHT_X} height={JPYC_H} rx={12} fill={SURFACE} stroke={FLOW} strokeWidth={1.8} />
-      <IconTile x={JPYC_RIGHT_X + 26} cy={JPYC_TOP + JPYC_H / 2} size={28} kind="coin" />
-      <text x={JPYC_RIGHT_X + 46} y={JPYC_TOP + 21} fontSize={14} fontWeight={700} fill={TEXT}>
-        株式会社JPYC
-      </text>
-      <text x={JPYC_RIGHT_X + 46} y={JPYC_TOP + 38} fontSize={12} fill={SUBTEXT}>
-        償還（JPYC → 円）
-      </text>
+        <Band top={B1_TOP} h={B1_H} title="JPYC配布対象者になるまで" />
+        <Band top={B2_TOP} h={B2_H} title="円とJPYCの流れ" />
+        <Band top={B3_TOP} h={B3_H} title="運営体制" />
 
-      {/* ユーザーから配布対象者まで、下へ一本 */}
-      <rect x={PATH_X} y={PATH_TOP} width={PATH_W} height={CARD_TOP + 12 - PATH_TOP} rx={12} fill={LANE} />
-      <rect x={PATH_CX - 84} y={USER_TOP} width={168} height={USER_H} rx={USER_H / 2} fill={SURFACE} stroke={OPS} strokeWidth={1.6} />
-      <IconTile x={PATH_CX - 52} cy={USER_TOP + USER_H / 2} size={22} kind="person" />
-      <text x={PATH_CX - 34} y={USER_TOP + USER_H / 2 + 4} fontSize={14} fontWeight={700} fill={TEXT}>
-        ユーザー
-      </text>
-      <line x1={PATH_CX} y1={USER_TOP + USER_H + 4} x2={PATH_CX} y2={COND_TOP - 4} stroke={OPS} strokeWidth={2} markerEnd="url(#kaga-ov-ops)" />
-      <text x={PATH_CX + 14} y={(USER_TOP + USER_H + COND_TOP) / 2} fontSize={12} fontWeight={700} fill={TEXT}>
-        e-加賀市民で
-      </text>
-      <text x={PATH_CX + 14} y={(USER_TOP + USER_H + COND_TOP) / 2 + 16} fontSize={12} fontWeight={700} fill={TEXT}>
-        ウォレットを連携
-      </text>
-      <rect x={288} y={COND_TOP} width={136} height={COND_H} rx={10} fill={SURFACE} stroke={OPS} strokeWidth={1.6} />
-      <text x={356} y={COND_TOP + 29} textAnchor="middle" fontSize={12} fontWeight={700} fill={TEXT}>
-        e-加賀市民証を保有
-      </text>
-      <text x={PATH_CX} y={COND_TOP + 29} textAnchor="middle" fontSize={12} fontWeight={700} fill={SUBTEXT}>
-        かつ
-      </text>
-      <rect x={474} y={COND_TOP} width={108} height={COND_H} rx={10} fill={SURFACE} stroke={OPS} strokeWidth={1.6} />
-      <text x={528} y={COND_TOP + 29} textAnchor="middle" fontSize={12} fontWeight={700} fill={TEXT}>
-        JPKI確認
-      </text>
-      <line x1={PATH_CX} y1={COND_TOP + COND_H + 4} x2={PATH_CX} y2={CARD_TOP - 4} stroke={OPS} strokeWidth={2.2} markerEnd="url(#kaga-ov-ops)" />
-      <text x={PATH_CX + 14} y={(COND_TOP + COND_H + CARD_TOP) / 2 + 4} fontSize={13} fontWeight={700} fill={TEXT}>
-        対象になる
-      </text>
+        {/* 帯1：ユーザー → 市民証かつ公的個人認証 → e-加賀市民 */}
+        <Chip x={COL[0]} top={B1_CHIP_TOP} icon="person" name="ユーザー" sub={['住民・関係人口']} />
+        <line x1={COL[0] + CARD_W / 2 + 3} y1={B1_CY} x2={condL - COND_W / 2 - 4} y2={B1_CY} stroke={OPS} strokeWidth={1.6} markerEnd="url(#kaga-ov-ops)" />
+        <Label x={(COL[0] + CARD_W / 2 + condL - COND_W / 2) / 2} y={B1_CY - 24} text="e-加賀市民に" kind="plain" />
+        <Label x={(COL[0] + CARD_W / 2 + condL - COND_W / 2) / 2} y={B1_CY - 9} text="ウォレットを登録" kind="plain" />
+        <Chip x={condL} top={B1_CHIP_TOP} w={COND_W} icon="cert" name="e-加賀市民証の保有" sub={['登録したウォレットで']} condition />
+        <Label x={COL[2]} y={B1_CY + 4} text="かつ" kind="ops" />
+        <Chip x={condR} top={B1_CHIP_TOP} w={COND_W} icon="idcard" name="公的個人認証（JPKI）" sub={['マイナンバーカードで']} condition />
+        <path
+          d={`M${condL},${B1_CHIP_TOP + CHIP_H} V${JOIN_Y} H${condR} V${B1_CHIP_TOP + CHIP_H} M${COL[2]},${JOIN_Y} V${CARD_TOP - 4}`}
+          fill="none"
+          stroke={OPS}
+          strokeWidth={1.6}
+          markerEnd="url(#kaga-ov-ops)"
+        />
+        <Label x={COL[2] + 10} y={B2_TOP + 22} text="配布対象者になる" kind="plain" anchor="start" />
 
-      {/* 推進機構 ⇄ JPYC：円を払い、JPYCを受け取る */}
-      <line x1={COL[0] - 18} y1={CARD_TOP - 4} x2={COL[0] - 18} y2={JPYC_BOTTOM + 4} className="kaga-yen-stroke" strokeWidth={2} markerEnd="url(#kaga-ov-yen)" />
-      <FlowLabel x={COL[0] - 26} y={exchangeMid} lines={['円']} anchor="end" className="kaga-yen-fill" />
-      <line x1={COL[0] + 18} y1={JPYC_BOTTOM + 4} x2={COL[0] + 18} y2={CARD_TOP - 4} stroke={FLOW} strokeWidth={2} markerEnd="url(#kaga-ov-jpyc)" />
-      <FlowLabel x={COL[0] + 26} y={exchangeMid} lines={['JPYC発行']} anchor="start" color={FLOW} />
-
-      {/* 地域事業者 ⇄ JPYC：償還（受取後の扱いは検討中） */}
-      <line
-        x1={COL[2] - 18}
-        y1={CARD_TOP - 4}
-        x2={COL[2] - 18}
-        y2={JPYC_BOTTOM + 4}
-        stroke={FLOW}
-        strokeWidth={2}
-        strokeDasharray="5 3.5"
-        markerEnd="url(#kaga-ov-jpyc)"
-      />
-      <line
-        x1={COL[2] + 18}
-        y1={JPYC_BOTTOM + 4}
-        x2={COL[2] + 18}
-        y2={CARD_TOP - 4}
-        className="kaga-yen-stroke"
-        strokeWidth={2}
-        strokeDasharray="5 3.5"
-        markerEnd="url(#kaga-ov-yen)"
-      />
-      <FlowLabel x={COL[2] - 26} y={exchangeMid - 6} lines={['償還', '検討中']} anchor="end" color={FLOW} />
-      <FlowLabel x={COL[2] + 26} y={exchangeMid} lines={['円']} anchor="start" className="kaga-yen-fill" />
-
-      {/* 配布・支払い */}
-      <line x1={COL[0] + CARD_W / 2 + 4} y1={CARD_TOP + 78} x2={COL[1] - CARD_W / 2 - 4} y2={CARD_TOP + 78} stroke={FLOW} strokeWidth={2} markerEnd="url(#kaga-ov-jpyc)" />
-      <FlowLabel x={(COL[0] + COL[1]) / 2} y={CARD_TOP + 70} lines={['配布']} color={FLOW} />
-      <line x1={COL[1] + CARD_W / 2 + 4} y1={CARD_TOP + 78} x2={COL[2] - CARD_W / 2 - 4} y2={CARD_TOP + 78} stroke={FLOW} strokeWidth={2} markerEnd="url(#kaga-ov-jpyc)" />
-      <FlowLabel x={(COL[1] + COL[2]) / 2} y={CARD_TOP + 70} lines={['支払い']} color={FLOW} />
-      <text x={(COL[1] + COL[2]) / 2} y={CARD_TOP + 96} textAnchor="middle" fontSize={11.5} fill={SUBTEXT}>
-        店頭QR
-      </text>
-
-      {/* 運営体制 */}
-      <rect x={16} y={BAND_TOP} width={WIDTH - 32} height={BAND_H} rx={12} fill={LANE} />
-      <text x={32} y={BAND_TOP + 22} fontSize={13} fontWeight={700} fill={TEXT}>
-        運営体制
-      </text>
-
-      <line x1={COL[0]} y1={CHIP_TOP - 3} x2={COL[0]} y2={CARD_BOTTOM + 3} stroke={OPS} strokeWidth={1.6} markerEnd="url(#kaga-ov-ops)" />
-      <text x={COL[0] - 10} y={gapMid} textAnchor="end" fontSize={12} fill={SUBTEXT}>
-        運営を委託
-      </text>
-      <path
-        d={`M${COL[0] + 72},${CARD_BOTTOM} V${RAIL_Y} H${COL[1] - 46} V${CHIP_TOP - 3}`}
-        fill="none"
-        stroke={OPS}
-        strokeWidth={1.6}
-        markerEnd="url(#kaga-ov-ops)"
-      />
-      <text x={(COL[0] + 72 + COL[1] - 46) / 2} y={RAIL_Y - 8} textAnchor="middle" fontSize={12} fill={SUBTEXT}>
-        再委託
-      </text>
-      <line x1={COL[1]} y1={CHIP_TOP - 3} x2={COL[1]} y2={CARD_BOTTOM + 3} stroke={OPS} strokeWidth={1.6} markerEnd="url(#kaga-ov-ops)" />
-      <text x={COL[1] + 10} y={gapMid} fontSize={12} fill={SUBTEXT}>
-        市民アプリを改修
-      </text>
-      <line x1={COL[2] - CHIP_W / 2 - 3} y1={chipCy} x2={COL[1] + CHIP_W / 2 + 3} y2={chipCy} stroke={OPS} strokeWidth={1.6} markerEnd="url(#kaga-ov-ops)" />
-      <text x={(COL[1] + COL[2]) / 2} y={chipCy - 8} textAnchor="middle" fontSize={12} fill={SUBTEXT}>
-        依頼
-      </text>
-
-      <a href="#issue-after-receipt" className="kaga-ov-link">
-        <rect x={COL[2] - 86} y={CARD_BOTTOM + 10} width={172} height={26} rx={13} fill={SURFACE} stroke={FLOW} strokeWidth={1.3} strokeDasharray="4 3" />
-        <text x={COL[2]} y={CARD_BOTTOM + 27} textAnchor="middle" fontSize={12} fontWeight={700}>
-          受取後は3経路（論点）
+        {/* 帯2：お金の流れ。番号は業務フローの手順 */}
+        <StepNo x={gap(0)} y={FLOW_Y - 40} n={1} />
+        <Label x={gap(0)} y={FLOW_Y - 17} text="発行" kind="jpyc" />
+        <HArrow from={COL[1]} to={COL[0]} y={FLOW_Y - 7} kind="yen" />
+        <HArrow from={COL[0]} to={COL[1]} y={FLOW_Y + 7} kind="jpyc" />
+        <text x={gap(0)} y={FLOW_Y + 29} textAnchor="middle" fontSize={10} fill={SUBTEXT}>
+          円→JPYC
         </text>
-      </a>
 
-      {actors.map((a) => (
-        <MoneyCard key={a.name.join('')} a={a} />
-      ))}
-      {chips.map((c) => (
-        <OpsChipBox key={c.name} c={c} />
-      ))}
-    </svg>
+        <StepNo x={gap(1)} y={FLOW_Y - 40} n={2} />
+        <Label x={gap(1)} y={FLOW_Y - 10} text="配布" kind="jpyc" />
+        <HArrow from={COL[1]} to={COL[2]} y={FLOW_Y} kind="jpyc" />
+
+        <StepNo x={gap(2)} y={FLOW_Y - 40} n={3} />
+        <Label x={gap(2)} y={FLOW_Y - 17} text="支払い" kind="jpyc" />
+        <HArrow from={COL[2]} to={COL[3]} y={FLOW_Y - 7} kind="jpyc" />
+        <HArrow from={COL[3]} to={COL[2]} y={FLOW_Y + 7} kind="ops" />
+        <Label x={gap(2)} y={FLOW_Y + 29} text="役務提供" kind="ops" />
+
+        <StepNo x={gap(3)} y={FLOW_Y - 40} n={4} />
+        <Label x={gap(3)} y={FLOW_Y - 17} text="償還" kind="jpyc" />
+        <HArrow from={COL[3]} to={COL[4]} y={FLOW_Y - 7} kind="jpyc" dashed />
+        <HArrow from={COL[4]} to={COL[3]} y={FLOW_Y + 7} kind="yen" dashed />
+        <text x={gap(3)} y={FLOW_Y + 29} textAnchor="middle" fontSize={10} fill={SUBTEXT}>
+          JPYC→円
+        </text>
+
+        <a href="#issue-after-receipt" className="kaga-ov-link">
+          <rect x={COL[3] - CARD_W / 2} y={CARD_BOTTOM + 10} width={CARD_W} height={26} rx={13} fill={SURFACE} stroke={FLOW} strokeWidth={1.3} strokeDasharray="4 3" />
+          <text x={COL[3]} y={CARD_BOTTOM + 27} textAnchor="middle" fontSize={11.5} fontWeight={700}>
+            受取後の対応は検討中
+          </text>
+        </a>
+
+        {/* 帯3：運営体制 */}
+        <line x1={COL[1]} y1={B3_CHIP_TOP - 3} x2={COL[1]} y2={CARD_BOTTOM + 4} stroke={OPS} strokeWidth={1.6} markerEnd="url(#kaga-ov-ops)" />
+        <Label x={COL[1] - 10} y={CARD_BOTTOM + 26} text="運営を委託" kind="ops" anchor="end" />
+        <path
+          d={`M${COL[1] + 44},${CARD_BOTTOM} V${RAIL_Y} H${COL[2] - 44} V${B3_CHIP_TOP - 3}`}
+          fill="none"
+          stroke={OPS}
+          strokeWidth={1.6}
+          markerEnd="url(#kaga-ov-ops)"
+        />
+        <Label x={gap(1)} y={RAIL_Y - 7} text="再委託" kind="ops" />
+        <line x1={COL[2]} y1={B3_CHIP_TOP - 3} x2={COL[2]} y2={CARD_BOTTOM + 4} stroke={OPS} strokeWidth={1.6} markerEnd="url(#kaga-ov-ops)" />
+        <Label x={COL[2] + 10} y={CARD_BOTTOM + 26} text="市民アプリを改修" kind="ops" anchor="start" />
+        <HArrow from={COL[3]} to={COL[2]} y={B3_CY} kind="ops" />
+        <Label x={gap(2)} y={B3_CY - 21} text="実証を" kind="ops" />
+        <Label x={gap(2)} y={B3_CY - 7} text="依頼" kind="ops" />
+
+        <Chip x={COL[1]} top={B3_CHIP_TOP} icon="cityhall" name="加賀市" sub={['委託元']} />
+        <Chip x={COL[2]} top={B3_CHIP_TOP} icon="org" name="CORGEAR" sub={['再委託先', '運営実務']} />
+        <Chip x={COL[3]} top={B3_CHIP_TOP} icon="org" name="DSK" sub={['依頼元']} />
+
+        {actors.map((a) => (
+          <MoneyCard key={a.x} a={a} />
+        ))}
+      </svg>
     </div>
   );
 }

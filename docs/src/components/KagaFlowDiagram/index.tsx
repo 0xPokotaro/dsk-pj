@@ -32,7 +32,7 @@ const CY = CARD_TOP + CARD_H / 2;
 
 type Actor = {x: number; icon: IconKind; name: string[]};
 const actors: Actor[] = [
-  {x: COL[0], icon: 'coin', name: ['株式会社JPYC']},
+  {x: COL[0], icon: 'coin', name: ['JPYC株式会社']},
   {x: COL[1], icon: 'org', name: ['加賀国家戦略特区', '推進機構']},
   {x: COL[2], icon: 'person', name: ['e-加賀市民']},
   {x: COL[3], icon: 'shop', name: ['地域事業者']},

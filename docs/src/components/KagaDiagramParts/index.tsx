@@ -17,7 +17,7 @@ export const YEN_STYLE = `
 [data-theme='dark'] .kaga-yen-fill { fill: #f2b84b; }
 `;
 
-export type IconKind = 'person' | 'org' | 'shop' | 'coin' | 'cityhall';
+export type IconKind = 'person' | 'org' | 'shop' | 'coin' | 'cityhall' | 'cert' | 'idcard';
 
 export function Icon({kind, color = TEXT}: {kind: IconKind; color?: string}): ReactNode {
   switch (kind) {
@@ -67,6 +67,27 @@ export function Icon({kind, color = TEXT}: {kind: IconKind; color?: string}): Re
           <line x1={3} y1={-3} x2={3} y2={7} />
           <line x1={8} y1={-3} x2={8} y2={7} />
           <rect x={-12} y={8} width={24} height={3} fill={color} />
+        </g>
+      );
+    case 'cert':
+      // 証明書（市民証NFT）：枠に文字の線と、右下に印
+      return (
+        <g stroke={color} strokeWidth={1.6} strokeLinecap="round">
+          <rect x={-11} y={-9} width={22} height={18} rx={2} fill="none" strokeLinejoin="round" />
+          <line x1={-7} y1={-4} x2={7} y2={-4} />
+          <line x1={-7} y1={0} x2={3} y2={0} />
+          <circle cx={6} cy={4} r={2.6} fill={color} stroke="none" />
+        </g>
+      );
+    case 'idcard':
+      // 身分証（マイナンバーカード）：顔写真と文字の線
+      return (
+        <g stroke={color} strokeWidth={1.6} strokeLinecap="round">
+          <rect x={-12} y={-8} width={24} height={16} rx={2} fill="none" strokeLinejoin="round" />
+          <circle cx={-6} cy={-1.5} r={2.4} fill={color} stroke="none" />
+          <path d="M-9.5,4.5 C-9.5,1.5 -2.5,1.5 -2.5,4.5 Z" fill={color} stroke="none" />
+          <line x1={1} y1={-3} x2={8} y2={-3} />
+          <line x1={1} y1={1} x2={8} y2={1} />
         </g>
       );
   }

@@ -55,7 +55,7 @@ const actors: Actor[] = [
   {x: COL[1], top: ROW1_TOP, icon: 'org', name: ['加賀国家戦略特区', '推進機構'], role: '実施主体'},
   {x: COL[2], top: ROW1_TOP, icon: 'org', name: ['CORGEAR'], role: '再委託先・運営実務'},
   {x: COL[3], top: ROW1_TOP, icon: 'org', name: ['DSK'], role: '依頼元'},
-  {x: COL[0], top: ROW2_TOP, icon: 'coin', name: ['株式会社JPYC'], role: '発行体'},
+  {x: COL[0], top: ROW2_TOP, icon: 'coin', name: ['JPYC株式会社'], role: '発行体'},
   {x: COL[2], top: ROW2_TOP, icon: 'person', name: ['e-加賀市民'], role: '配布先'},
   {x: COL[3], top: ROW2_TOP, icon: 'shop', name: ['地域事業者'], role: '受取側'},
 ];
@@ -93,7 +93,7 @@ export default function KagaRolesDiagram(): ReactNode {
     <svg
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       role="img"
-      aria-label="第一弾の体制図：加賀市（委託元）が推進機構（実施主体）へ運営を委託し、推進機構がCORGEAR（再委託先・運営実務）へ再委託してCORGEARが実務を提供する。DSK（依頼元）がCORGEARへ依頼し、CORGEARが進捗・結果を共有する。CORGEARはe-加賀市民（配布先）の市民アプリ（既存のWebアプリ）を改修する。株式会社JPYCは発行体、地域事業者は受取側"
+      aria-label="第一弾の体制図：加賀市（委託元）が推進機構（実施主体）へ運営を委託し、推進機構がCORGEAR（再委託先・運営実務）へ再委託してCORGEARが実務を提供する。DSK（依頼元）がCORGEARへ依頼し、CORGEARが進捗・結果を共有する。CORGEARはe-加賀市民（配布先）の市民アプリ（既存のWebアプリ）を改修する。JPYC株式会社は発行体、地域事業者は受取側"
       style={{width: '100%', maxWidth: WIDTH, height: 'auto'}}>
       <defs>
         <ArrowMarker id="kaga-roles-arrow" color={OPS} />
