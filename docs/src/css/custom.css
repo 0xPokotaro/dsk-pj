@@ -75,3 +75,20 @@
   line-height: 1;
   vertical-align: 0.1em;
 }
+
+/* 制御パターンの表：No とパターン名を折り返さず、残りの列を均等にする */
+.pattern-table th:nth-child(1) {
+  width: 5%;
+}
+.pattern-table th:nth-child(2) {
+  width: 17%;
+}
+.pattern-table th:nth-child(n + 3) {
+  width: 26%;
+}
+.merit-table th:nth-child(n + 3) {
+  width: 39%;
+}
+.pattern-table td:nth-child(2) {
+  white-space: nowrap;
+}

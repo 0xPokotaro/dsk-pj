@@ -1,0 +1,112 @@
+---
+sidebar_position: 4.6
+sidebar_label: JPYC利用先制御
+---
+
+import JpycFunctionsDiagram from '@site/src/components/JpycFunctionsDiagram';
+import JpycPatternDiagram from '@site/src/components/JpycPatternDiagram';
+import JpycPatternCards from '@site/src/components/JpycPatternCards';
+
+# JPYCの利用先制御
+
+ユーザーに配布する JPYC を、ホワイトリストに登録された地域事業者でしか使えないようにする方法を整理する。
+
+## 前提
+
+**業務フロー**
+
+1. **配布**: 加賀国家戦略特区推進機構が、ユーザーに JPYC を配布する。
+2. **決済**: ユーザーが、受け取った JPYC で地域事業者に支払う。
+
+**JPYC の種類**
+
+ユーザーが持つ JPYC は、2種類ある。
+
+- **配布分の JPYC**: 配布で受け取った JPYC。利用先を制御する対象。
+- **それ以外の JPYC**: ユーザーが自分で用意した JPYC。制御の対象外で、自由に使える。
+
+JPYC はどれも同じトークンのため、同じアドレスに入ると、配布分とそれ以外を区別できない。
+
+**方針**
+
+配布分の JPYC は、指定の地域事業者で使ってもらう。そのため、決済の段階で、JPYC の利用先を指定の地域事業者に限る。指定の地域事業者は、ホワイトリストで管理する。
+
+## JPYC コントラクトでできること・できないこと
+
+JPYC コントラクトは発行元（JPYC社）が管理しており、利用者側で中身を変えることはできない。そのため、JPYC コントラクトでできないことは、利用先制御の仕組みとして別に用意する。
+
+<JpycFunctionsDiagram />
+
+**できること**
+
+- **送金・引き落とし**: `transfer` で直接送金する。または、`approve` で引き落としを許可し、許可された相手が `transferFrom` で引き落とす。
+- **残高の記録**: アドレスごとの合計額を、`balanceOf` として記録する。
+
+**できないこと**
+
+- **送金先を限定する**: 送金先を地域事業者に限る仕組みはない。発行元によるブラックリストや停止の機能はあるが、不正対策向けのため、利用先の制限には使えない。
+- **配布分を区別する**: 残高は合計額だけを記録するため、配布分とそれ以外の JPYC を区別できない。
+
+## 制御パターン
+
+パターンによっては、JPYC そのものではなく、預けた残高、トークン、NFT を配布する。
+
+<JpycPatternCards />
+
+:::caution
+
+いずれのパターンも、JPYC を通常のウォレットに直接配布すると制御が効かない。
+
+:::
+
+### 1. スマートアカウント
+
+<JpycPatternDiagram pattern="smart-account" />
+
+### 2. デポジット
+
+<JpycPatternDiagram pattern="deposit" />
+
+### 3. ラッパートークン
+
+<JpycPatternDiagram pattern="wrapper" />
+
+### 4. NFTクーポン
+
+<JpycPatternDiagram pattern="nft" />
+
+### メリットとデメリット
+
+<div className="table-small pattern-table merit-table">
+
+| No | パターン | メリット | デメリット |
+| --- | --- | --- | --- |
+| 1 | スマートアカウント | <ul><li>JPYC をそのまま使える</li><li>地域事業者は、JPYC への換金が不要</li></ul> | <ul><li>配布分とそれ以外の JPYC が同じアカウントに混ざるため、配布分の残高を別に管理する必要がある</li><li>ユーザーが設定を変えられない設計が必要</li><li>既存のウォレットからの切り替えが必要</li><li>開発と運用のコストが高い</li></ul> |
+| 2 | デポジット | <ul><li>配布分とそれ以外の JPYC が分かれる</li><li>JPYC をそのまま使える</li><li>新しいトークンを作らない</li><li>地域事業者は、JPYC への換金が不要</li></ul> | <ul><li>未使用分の返還方法を決める必要がある</li><li>ユーザーが引き出せない設計が必要</li></ul> |
+| 3 | ラッパートークン | <ul><li>配布分とそれ以外の JPYC が分かれる</li><li>既存のウォレットで、保有と送金ができる</li></ul> | <ul><li>新しいトークンを作るため、スコープ外となる可能性がある</li><li>地域事業者に、JPYC への換金の手続きが必要</li></ul> |
+| 4 | NFTクーポン | <ul><li>配布分とそれ以外の JPYC が分かれる</li><li>配布分を JPYC で持たないため、直接送金で制御を外せない</li><li>NFT が外部に渡っても、換金できるのは地域事業者だけ</li></ul> | <ul><li>換金用の JPYC を、加賀国家戦略特区推進機構側で用意する必要がある</li><li>地域事業者に、JPYC への換金の手続きが必要</li></ul> |
+
+</div>
+
+## 他の事例
+
+JPYC に限らず、トークンや通貨の利用先を制限している事例。いずれも、運用で利用先を制限している。
+
+<div className="table-small">
+
+| 事例・プロダクト | 種類 | 利用先の制限の仕組み |
+| --- | --- | --- |
+| [WFP の Building Blocks](https://www.technologyreview.com/s/610806/inside-the-jordan-refugee-camp-that-runs-on-blockchain/) | 国連の食料支援 | 難民が、キャンプ内の店舗でだけバウチャーを使う。利用は虹彩認証で本人確認し、取引は、許可制の Ethereum に記録する。台帳の考え方はデポジットに近い |
+| [北國銀行のトチカ](https://www.asteria.com/jp/inlive/finance/7005/) | 預金型ステーブルコイン | 県内の加盟店で使える。技術的な制限の実装は、確認できなかった |
+| [さるぼぼコイン](https://paymentnavi.com/paymentnews/72185.html) | 飛騨信用組合の電子地域通貨 | 高山市、飛騨市、白川村の加盟店だけで使える。サーバー管理型の電子通貨で、ブロックチェーンの採用は確認できなかった |
+| [自治体のデジタル商品券](https://www.town.kawanishi.yamagata.jp/sangyo/syokogyo/kameiten_jigyougaiyou.pdf) | 川西町や四日市市などの事例 | 加盟店の登録、実店舗の要件、本店の所在地で分けるなど、運用のルールで制限する |
+
+</div>
+
+各事例の記述は、検索で見つかった記事や解説に基づく。現在の状況と公式の仕様は、確認が必要。
+
+## 未確認事項
+
+- JPYC のコントラクトのソース、バージョン、権限者は未確認。
+- Web3Auth のウォレットで、スマートアカウントに送金先の制限を設定できるかは未確認。
+- デポジットなど、配布元が JPYC を預かる形が、資金決済法上どう扱われるかは未確認。

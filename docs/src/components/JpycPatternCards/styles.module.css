@@ -1,0 +1,120 @@
+/* JPYC 利用先制御の図と同じ青を基調にする */
+.grid {
+  --jpyc-accent: #2563eb;
+  --jpyc-soft: #eef4ff;
+  --jpyc-on-accent: #ffffff;
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin: 1.25rem 0 1.5rem;
+}
+
+:global([data-theme='dark']) .grid {
+  --jpyc-accent: #6ea8ff;
+  --jpyc-soft: #1a2538;
+  --jpyc-on-accent: #0b1220;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  border: 1.5px solid var(--jpyc-accent);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--ifm-background-surface-color);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  background: var(--jpyc-accent);
+  color: var(--jpyc-on-accent);
+}
+
+.no {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--jpyc-on-accent);
+  color: var(--jpyc-accent);
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: inherit;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px 12px;
+  flex: 1;
+}
+
+.label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ifm-color-emphasis-700);
+  margin-bottom: 2px;
+}
+
+.mechanism {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--jpyc-soft);
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.list li + li {
+  margin-top: 0;
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.step {
+  padding: 6px 10px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+}
+
+.arrow {
+  align-self: center;
+  color: var(--jpyc-accent);
+  font-weight: 700;
+}
+
+.text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+}

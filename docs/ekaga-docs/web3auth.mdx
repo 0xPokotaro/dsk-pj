@@ -1,0 +1,28 @@
+---
+sidebar_position: 4.5
+sidebar_label: Web3Auth調査
+---
+
+# Web3Auth調査
+
+## 別サービス間でのアドレス同一性
+
+同じ Google アカウント・メールアドレスでログインしても、Web3Auth を利用するサービスである clientId が異なれば、ウォレットアドレスは異なる。
+
+アドレスは「サービス × ログイン方法」、つまり clientId と verifierの組み合わせで決まる。
+
+<div className="table-small">
+
+| 条件 | アドレス |
+| --- | --- |
+| サービス・ログイン方法とも同じ | 同一 |
+| サービスが異なる | 異なる |
+| ログイン方法が異なる。Google とメールなど | 異なる |
+
+</div>
+
+実際に、Torus wallet と wallet.web3auth.io に同一アカウントでログインしたところ、アドレスは異なった。
+
+- [Different Private Keys/ Wallet Address across Integrations](https://web3auth.io/docs/troubleshooting/different-private-key)
+- [Interoperability between web3auth and torus wallet](https://web3auth.io/community/t/interoperability-between-web3auth-and-torus-wallet/2523)
+- [Different wallets from (Google SSO) and (torus Google SSO)](https://web3auth.io/community/t/different-wallets-from-google-sso-and-torus-google-sso/2550)
